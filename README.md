@@ -19,8 +19,7 @@ Add this component to your ESPHome configuration using the `external_components`
 
 ```yaml
 external_components:
-  - source: github://username/esphome-artnet@main
-    components: [ artnet_receiver ]
+  - source: github://h3mul/esphome-artnet@main
 ```
 
 ### Option 2: Local Installation
@@ -31,7 +30,6 @@ external_components:
 ```yaml
 external_components:
   - source: components
-    components: [ artnet_receiver ]
 ```
 
 ## Development Setup
