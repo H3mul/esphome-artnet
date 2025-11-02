@@ -10,8 +10,6 @@
 
 namespace esphome::artnet_receiver {
 
-static const char *const TAG = "artnet_receiver";
-
 class ArtNetReceiver : public Component {
 public:
   void setup() override;
