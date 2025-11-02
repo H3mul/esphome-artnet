@@ -1,0 +1,137 @@
+esphome:
+  name: artnet-receiver-example
+  platform: ESP32
+  board: esp32dev
+
+# Enable WiFi (required for ArtNet)
+wifi:
+  ssid: "your_wifi_ssid"
+  password: "your_wifi_password"
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "ArtNet Receiver Fallback Hotspot"
+    password: "12345678"
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+# Enable OTA updates
+ota:
+
+# Include our custom component from the local components directory
+external_components:
+  - source: components
+
+# Configure the ArtNet receiver
+artnet_receiver:
+  # Unique ID for the overall ArtNet component instance
+  id: artnet_receiver
+  
+  # ArtNet configuration
+  artnet_universe: 0 # The DMX universe to listen to (0-15)
+  
+  # List the specific DMX channels you want to monitor and expose as ESPHome entities
+  channels:
+    # Channel 1: Expose as a sensor showing DMX value (0-255)
+    - channel_number: 1 # DMX channel number (1-512)
+      name: "ArtNet Dimmer 1"
+      id: dmx_channel_1
+      
+    # Channel 2: Another channel for control
+    - channel_number: 2
+      name: "ArtNet Dimmer 2"
+      id: dmx_channel_2
+      
+    # Channel 3: RGB Red channel
+    - channel_number: 3
+      name: "RGB Red"
+      id: dmx_channel_3
+      
+    # Channel 4: RGB Green channel
+    - channel_number: 4
+      name: "RGB Green"
+      id: dmx_channel_4
+      
+    # Channel 5: RGB Blue channel
+    - channel_number: 5
+      name: "RGB Blue"
+      id: dmx_channel_5
+
+# Optional: Create template lights that use the DMX values
+light:
+  # Single channel dimmer using DMX channel 1
+  - platform: monochromatic
+    name: "DMX Dimmer Light 1"
+    output: dmx_output_1
+    
+  # RGB light using DMX channels 3, 4, 5
+  - platform: rgb
+    name: "DMX RGB Light"
+    red: dmx_output_3
+    green: dmx_output_4
+    blue: dmx_output_5
+
+# Template outputs that convert sensor values to output values
+output:
+  # Output for channel 1 (converts 0-255 to 0.0-1.0)
+  - platform: template
+    id: dmx_output_1
+    type: float
+    write_action:
+      # This is just a placeholder - in real use, you'd connect to actual hardware
+      - logger.log: 
+          format: "DMX Channel 1 output: %.2f"
+          args: [ 'state' ]
+
+  # Outputs for RGB channels
+  - platform: template
+    id: dmx_output_3
+    type: float
+    write_action:
+      - logger.log: 
+          format: "DMX RGB Red output: %.2f"
+          args: [ 'state' ]
+          
+  - platform: template
+    id: dmx_output_4
+    type: float
+    write_action:
+      - logger.log: 
+          format: "DMX RGB Green output: %.2f"
+          args: [ 'state' ]
+          
+  - platform: template
+    id: dmx_output_5
+    type: float
+    write_action:
+      - logger.log: 
+          format: "DMX RGB Blue output: %.2f"
+          args: [ 'state' ]
+
+# Optional: Create automations that respond to DMX value changes
+automation:
+  # Example: Turn on a built-in LED when DMX channel 1 is above 128
+  - trigger:
+      - sensor.on_value:
+          id: dmx_channel_1
+          above: 128
+    action:
+      - switch.turn_on: builtin_led
+      
+  - trigger:
+      - sensor.on_value:
+          id: dmx_channel_1
+          below: 128
+    action:
+      - switch.turn_off: builtin_led
+
+# Built-in LED for demonstration
+switch:
+  - platform: gpio
+    pin: GPIO2
+    name: "Built-in LED"
+    id: builtin_led
