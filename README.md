@@ -34,6 +34,20 @@ external_components:
     components: [ artnet_receiver ]
 ```
 
+## Development Setup
+
+This project uses clangd for C++ code completion and diagnostics in the component development.
+
+### Clangd Configuration
+
+1. Ensure clangd is installed and configured in your editor (VS Code has the LLVM clangd extension).
+2. Run the task to generate the compilation database:
+   ```bash
+   task compiledb
+   ```
+   This generates `compile_commands.json` from the ESPHome build and symlinks it to the project root for clangd to use.
+3. The `.clangd` configuration file is already set up to use the compilation database from the root directory, providing accurate code completion and error checking for the C++ components.
+
 ## Dependencies
 
 - **WiFi**: Required for receiving Art-Net packets
