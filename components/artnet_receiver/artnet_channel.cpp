@@ -1,8 +1,7 @@
 #include "artnet_channel.h"
 #include "esphome/core/log.h"
 
-namespace esphome {
-namespace artnet_receiver {
+namespace esphome::artnet_receiver {
 
 static const char *const TAG = "artnet_channel";
 
@@ -17,9 +16,9 @@ void ArtNetChannel::update_value(uint8_t value) {
     this->last_value_ = value;
     // Convert DMX value (0-255) to a float (0.0-255.0) for the sensor
     this->publish_state((float)value);
-    ESP_LOGD(TAG, "Channel %d updated to value: %d", this->channel_number_, value);
+    ESP_LOGD(TAG, "Channel %d updated to value: %d", this->channel_number_,
+             value);
   }
 }
 
-}  // namespace artnet_receiver
-}  // namespace esphome
+} // namespace esphome::artnet_receiver
