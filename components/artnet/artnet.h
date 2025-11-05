@@ -42,6 +42,20 @@ public:
     this->flush_period_ms_ = flush_period;
   }
 
+  void set_net(uint8_t net) {
+    if (net <= 127) {
+      this->net_ = net;
+    }
+  }
+  uint8_t get_net() const { return this->net_; }
+
+  void set_subnet(uint8_t subnet) {
+    if (subnet <= 15) {
+      this->subnet_ = subnet;
+    }
+  }
+  uint8_t get_subnet() const { return this->subnet_; }
+
 #ifdef USE_DMX_COMPONENT
   void add_artnet_to_dmx_route(esphome::dmx::DMXComponent *dmx_component,
                                uint16_t universe) {
@@ -66,6 +80,8 @@ protected:
   IPAddress output_address_;
   uint32_t flush_period_ms_{100};
   uint32_t last_flush_time_{0};
+  uint8_t net_{0};
+  uint8_t subnet_{0};
 
   void send_outputs_data();
 

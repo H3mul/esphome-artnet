@@ -19,6 +19,14 @@ ArtNet *ArtNet::instance_ = nullptr;
 std::vector<ArtNetSensor *> ArtNet::sensors_;
 std::map<uint16_t, std::vector<ArtNetOutput *>> ArtNet::outputs_per_universe_;
 
+// Helper function to calculate full Art-Net universe address
+// Combines net (7 bits) + subnet (4 bits) + universe (4 bits) into a 15-bit
+// address
+static uint16_t calculate_artnet_universe(uint8_t net, uint8_t subnet,
+                                          uint16_t universe) {
+  return (net << 8) | (subnet << 4) | universe;
+}
+
 void ArtNet::register_sensor(ArtNetSensor *sensor) {
   sensors_.push_back(sensor);
 }
@@ -95,7 +103,11 @@ void ArtNet::send_outputs_data() {
       }
     }
 
-    artnet_->setUniverse(universe);
+    // Calculate the full universe address: net (7 bits) + subnet (4 bits) +
+    // universe (4 bits)
+    uint16_t full_universe =
+        calculate_artnet_universe(this->net_, this->subnet_, universe);
+    artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
   }
@@ -142,7 +154,9 @@ void ArtNet::route_dmx_to_artnet() {
     dmx_component->read_universe(dmx_data, DMX_MAX_CHANNELS);
 
     // Send the DMX data as an Art-Net frame
-    artnet_->setUniverse(universe);
+    uint16_t full_universe =
+        calculate_artnet_universe(this->net_, this->subnet_, universe);
+    artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
   }

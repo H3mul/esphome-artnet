@@ -17,6 +17,8 @@ DMXComponent = dmx_ns.class_("DMXComponent")
 CONF_ARTNET_ID = "artnet_id"
 CONF_OUTPUT = "output"
 CONF_OUTPUT_ADDRESS = "address"
+CONF_OUTPUT_NET = "net"
+CONF_OUTPUT_SUBNET = "subnet"
 CONF_FLUSH_PERIOD = "flush_period"
 CONF_ROUTE = "route"
 CONF_ARTNET_TO_DMX = "artnet_to_dmx"
@@ -29,7 +31,9 @@ CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(ArtNet),
     cv.Optional(CONF_OUTPUT): cv.Schema({
         cv.Optional(CONF_OUTPUT_ADDRESS): cv.ipv4address,
-        cv.Optional(CONF_FLUSH_PERIOD, default="100ms"): cv.positive_time_period_milliseconds,
+        cv.Optional(CONF_OUTPUT_NET, default=0): cv.int_range(min=0, max=127),
+        cv.Optional(CONF_OUTPUT_SUBNET, default=0): cv.int_range(min=0, max=15),
+        cv.Optional(CONF_FLUSH_PERIOD, default="10ms"): cv.positive_time_period_milliseconds,
     }),
     cv.Optional(CONF_ROUTE): cv.Schema({
         cv.Optional(CONF_ARTNET_TO_DMX): cv.All(cv.ensure_list(cv.Schema({
@@ -54,6 +58,10 @@ async def to_code(config):
         output_config = config[CONF_OUTPUT]
         if CONF_OUTPUT_ADDRESS in output_config:
             cg.add(var.set_output_address(str(output_config[CONF_OUTPUT_ADDRESS])))
+        if CONF_OUTPUT_NET in output_config:
+            cg.add(var.set_net(output_config[CONF_OUTPUT_NET]))
+        if CONF_OUTPUT_SUBNET in output_config:
+            cg.add(var.set_subnet(output_config[CONF_OUTPUT_SUBNET]))
         if CONF_FLUSH_PERIOD in output_config:
             cg.add(var.set_flush_period(output_config[CONF_FLUSH_PERIOD]))
     
