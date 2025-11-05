@@ -29,11 +29,42 @@ ota:
 # Include our custom component from the local components directory
 external_components:
   - source: components
+  - source: ../esphome-dmx/components
+
+dmx:
+  - id: dmx_bus_a
+    mode: send
+    enable_pin:
+      number: GPIO18
+    tx_pin:
+      number: GPIO16
+    rx_pin:
+      number: GPIO17
+    dmx_port_id: 1
+
+  - id: dmx_bus_b
+    mode: receive
+    enable_pin:
+      number: GPIO23
+    tx_pin:
+      number: GPIO21
+    rx_pin:
+      number: GPIO22
+    dmx_port_id: 2
 
 artnet:
   output:
     address: 10.1.1.10
     flush_period: 10ms
+
+  route:
+    artnet_to_dmx:
+      - dmx_id: dmx_bus_a
+        universe: 1
+
+    dmx_to_artnet:
+      - dmx_id: dmx_bus_b
+        universe: 2
 
 sensor:
   - platform: artnet

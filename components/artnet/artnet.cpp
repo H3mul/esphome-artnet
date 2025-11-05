@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "artnet_output.h"
 #include "artnet_sensor.h"
+#include "esphome/components/dmx/dmx.h"
 #include "esphome/core/log.h"
 
 #define DMX_MAX_CHANNELS 512
@@ -51,6 +52,23 @@ void ArtNet::dump_config() {
   ESP_LOGCONFIG(TAG, "  Listening for ArtNet packets");
   ESP_LOGCONFIG(TAG, "  Output Address: %s",
                 this->output_address_.toString().c_str());
+
+  // Log routing configuration
+  if (!artnet_to_dmx_routes_.empty()) {
+    ESP_LOGCONFIG(TAG, "ArtNet to DMX routes:");
+    for (const auto &route : artnet_to_dmx_routes_) {
+      ESP_LOGCONFIG(TAG, "  Universe %d -> DMX component at %p", route.second,
+                    route.first);
+    }
+  }
+
+  if (!dmx_to_artnet_routes_.empty()) {
+    ESP_LOGCONFIG(TAG, "DMX to ArtNet routes:");
+    for (const auto &route : dmx_to_artnet_routes_) {
+      ESP_LOGCONFIG(TAG, "  DMX component at %p -> Universe %d", route.first,
+                    route.second);
+    }
+  }
 }
 
 void ArtNet::send_outputs_data() {
@@ -73,6 +91,13 @@ void ArtNet::send_outputs_data() {
            this->output_address_.toString().c_str());
 }
 
+void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
+                             uint8_t sequence, uint8_t *data) {
+  if (instance_ != nullptr) {
+    instance_->on_artnet_frame(universe, length, sequence, data);
+  }
+}
+
 void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
                              uint8_t sequence, uint8_t *data) {
   ESP_LOGD(TAG, "Received Art-Net frame: universe=%d, length=%d, sequence=%d",
@@ -84,12 +109,28 @@ void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
       sensor->update_value(data[sensor->get_channel() - 1]);
     }
   }
+
+  // Route ArtNet data to DMX if configured
+  route_artnet_to_dmx(universe, length, sequence, data);
 }
 
-void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
-                             uint8_t sequence, uint8_t *data) {
-  if (instance_ != nullptr) {
-    instance_->on_artnet_frame(universe, length, sequence, data);
+void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
+                                 uint8_t sequence, uint8_t *data) {
+  // Check if this universe should be routed to DMX
+  for (const auto &route : artnet_to_dmx_routes_) {
+    if (route.second == universe) {
+      esphome::dmx::DMXComponent *dmx_component = route.first;
+
+      if (dmx_component == nullptr) {
+        ESP_LOGW(TAG, "DMX component pointer is null for routing");
+        continue;
+      }
+
+      ESP_LOGD(TAG, "Routing ArtNet universe %d to DMX component", universe);
+
+      // Write the full DMX universe to the DMX component
+      dmx_component->send_universe(data, length);
+    }
   }
 }
 
