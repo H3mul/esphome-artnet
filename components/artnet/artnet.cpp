@@ -88,8 +88,6 @@ void ArtNet::send_outputs_data() {
 
     artnet_->write(output_address_);
   }
-  ESP_LOGD(TAG, "Flushed outputs to artnet destination: %s",
-           this->output_address_.toString().c_str());
 }
 
 void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
@@ -134,9 +132,6 @@ void ArtNet::route_dmx_to_artnet() {
     // Send the DMX data as an Art-Net frame
     artnet_->setUniverse(universe);
     artnet_->write(output_address_);
-
-    ESP_LOGD(TAG, "Routed DMX component at %p to ArtNet universe %d",
-             dmx_component, universe);
   }
 }
 
@@ -151,8 +146,6 @@ void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
         ESP_LOGW(TAG, "DMX component pointer is null for routing");
         continue;
       }
-
-      ESP_LOGD(TAG, "Routing ArtNet universe %d to DMX component", universe);
 
       // Write the full DMX universe to the DMX component
       dmx_component->send_universe(data, length);
