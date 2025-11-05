@@ -31,7 +31,10 @@ external_components:
   - source: components
   - source: ../esphome-dmx/components
 
+# Configure DMX bus instances for bidirectional communication
 dmx:
+  # DMX bus A: Configured for sending (ArtNet -> DMX)
+  # This bus receives Art-Net data from the network and transmits it as DMX
   - id: dmx_bus_a
     mode: send
     enable_pin:
@@ -42,6 +45,8 @@ dmx:
       number: GPIO17
     dmx_port_id: 1
 
+  # DMX bus B: Configured for receiving (DMX -> ArtNet)
+  # This bus receives DMX data from the physical line and forwards to Art-Net
   - id: dmx_bus_b
     mode: receive
     enable_pin:
@@ -52,52 +57,70 @@ dmx:
       number: GPIO22
     dmx_port_id: 2
 
+# Configure Art-Net component with output address and routing
 artnet:
+  # Output configuration: sends Art-Net packets to this address
   output:
+    # Target IP address for Art-Net packets (typically the lighting console or network address)
     address: 10.1.1.10
+    # Period for flushing output data to Art-Net (how often to send updates)
     flush_period: 10ms
 
+  # Bidirectional routing between Art-Net universes and DMX buses
   route:
+    # Route Art-Net packets to physical DMX buses
     artnet_to_dmx:
+      # Art-Net universe 1 is sent out on the dmx_bus_a (sends DMX to fixtures)
       - dmx_id: dmx_bus_a
         universe: 1
 
+    # Route physical DMX data to Art-Net universes
     dmx_to_artnet:
+      # Data received on dmx_bus_b (from fixtures/controllers) is sent as Art-Net universe 2
       - dmx_id: dmx_bus_b
         universe: 2
 
+# Sensors to read Art-Net input data and expose as Home Assistant entities
 sensor:
+  # ArtNet sensor on universe 1, channel 1
   - platform: artnet
     id: artnet_input_1
     name: "ArtNet Dimmer 1"
     universe: 1
     channel: 1
 
+  # ArtNet sensor on universe 1, channel 2
   - platform: artnet
     id: artnet_input_2
     name: "ArtNet Dimmer 2"
     universe: 1
     channel: 2
 
+# Output channels for controlling lights via Art-Net
 output:
+  # Red channel of RGB light (universe 1, channel 1)
   - platform: artnet
     id: artnet_output_1
     universe: 1
     channel: 1
 
+  # Green channel of RGB light (universe 1, channel 2)
   - platform: artnet
     id: artnet_output_2
     universe: 1
     channel: 2
 
+  # Blue channel of RGB light (universe 1, channel 3)
   - platform: artnet
     id: artnet_output_3
     universe: 1
     channel: 3
 
+# Define an RGB light controlled by Art-Net outputs
 light:
   - platform: rgb
     name: "Artnet input controlled RGB Light"
+    # Map Art-Net channels to RGB components
     red: artnet_output_1
     green: artnet_output_2
     blue: artnet_output_3
