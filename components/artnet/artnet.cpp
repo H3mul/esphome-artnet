@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "artnet_output.h"
 #include "artnet_sensor.h"
+#include "esphome/components/wifi/wifi_component.h"
 #include "esphome/core/log.h"
 
 #ifdef USE_DMX_COMPONENT
@@ -37,8 +38,11 @@ void ArtNet::setup() {
 }
 
 void ArtNet::loop() {
-  if (WiFi.status() == WL_CONNECTED) {
-    artnet_->read();
+  if (wifi::global_wifi_component->is_connected()) {
+    uint32_t opcode = artnet_->read();
+    if (opcode != 0) {
+      ESP_LOGV(TAG, "Received Art-Net frame with opcode: %u", opcode);
+    }
 
     // Check if it's time to flush outputs
     uint32_t now = millis();
@@ -84,8 +88,6 @@ void ArtNet::send_outputs_data() {
     uint8_t *dmx_buffer = artnet_->getDmxFrame();
     // Clear DMX buffer
     memset(dmx_buffer, 0, DMX_MAX_CHANNELS);
-
-    artnet_->setUniverse(universe);
     for (auto *output : outputs) {
       uint16_t channel = output->get_channel();
       if (channel >= 1 && channel <= DMX_MAX_CHANNELS) {
@@ -93,6 +95,8 @@ void ArtNet::send_outputs_data() {
       }
     }
 
+    artnet_->setUniverse(universe);
+    artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
   }
 }
@@ -106,7 +110,7 @@ void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
 
 void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
                              uint8_t sequence, uint8_t *data) {
-  ESP_LOGD(TAG, "Received Art-Net frame: universe=%d, length=%d, sequence=%d",
+  ESP_LOGV(TAG, "Received Art-Net frame: universe=%d, length=%d, sequence=%d",
            universe, length, sequence);
 
   // Update registered sensors
@@ -139,6 +143,7 @@ void ArtNet::route_dmx_to_artnet() {
 
     // Send the DMX data as an Art-Net frame
     artnet_->setUniverse(universe);
+    artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
   }
 #endif
