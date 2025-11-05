@@ -36,6 +36,13 @@ void ArtNet::setup() {
 void ArtNet::loop() {
   if (WiFi.status() == WL_CONNECTED) {
     artnet_->read();
+
+    // Check if it's time to flush outputs
+    uint32_t now = millis();
+    if (now - this->last_flush_time_ >= this->flush_period_ms_) {
+      this->last_flush_time_ = now;
+      this->send_outputs_data();
+    }
   }
 }
 

@@ -31,6 +31,10 @@ public:
   }
   const IPAddress &get_output_address() const { return this->output_address_; }
 
+  void set_flush_period(uint32_t flush_period) {
+    this->flush_period_ms_ = flush_period;
+  }
+
   static void register_sensor(ArtNetSensor *sensor);
   static void register_output(ArtNetOutput *output);
 
@@ -41,6 +45,8 @@ protected:
   static std::map<uint16_t, std::vector<ArtNetOutput *>> outputs_per_universe_;
 
   IPAddress output_address_;
+  uint32_t flush_period_ms_{100};
+  uint32_t last_flush_time_{0};
 
   void send_outputs_data();
 

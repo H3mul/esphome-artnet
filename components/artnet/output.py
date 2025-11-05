@@ -9,7 +9,6 @@ DEPENDENCIES = ["artnet"]
 ArtNetOutput = artnet_ns.class_("ArtNetOutput", output.FloatOutput, cg.Component)
 
 # Configuration keys
-CONF_DESTINATION_ADDRESS = "destination_address"
 CONF_UNIVERSE = "universe"
 CONF_CHANNEL = "channel"
 
