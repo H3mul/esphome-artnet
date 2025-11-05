@@ -105,6 +105,18 @@ void ArtNet::dump_config() {
 void ArtNet::send_outputs_data() {
   for (const auto &[universe, outputs] : outputs_per_universe_) {
     bool has_changes = false;
+    for (auto *output : outputs) {
+      uint16_t channel = output->get_channel();
+      if (channel >= 1 && channel <= DMX_MAX_CHANNELS) {
+        has_changes |= output->has_unflushed_changes();
+      }
+    }
+
+    // quit early, if we don't have any changes to send for this universe
+    if (!has_changes && !this->continuous_output_) {
+      continue;
+    }
+
     uint8_t *buffer = artnet_->getDmxFrame();
     // Clear DMX buffer
     memset(buffer, 0, DMX_MAX_CHANNELS);
@@ -112,15 +124,9 @@ void ArtNet::send_outputs_data() {
     for (auto *output : outputs) {
       uint16_t channel = output->get_channel();
       if (channel >= 1 && channel <= DMX_MAX_CHANNELS) {
-        has_changes |= output->has_unflushed_changes();
-        output->set_changes_flushed();
         buffer[channel - 1] = output->get_current_value();
+        output->set_changes_flushed();
       }
-    }
-
-    // if we don't have updates to push, just stop here
-    if (!has_changes && !this->continuous_output_) {
-      return;
     }
 
     uint16_t full_universe = calculate_artnet_universe(
