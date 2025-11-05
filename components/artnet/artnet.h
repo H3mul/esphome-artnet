@@ -69,6 +69,8 @@ protected:
       dmx_to_artnet_routes_;
 
   void send_outputs_data();
+
+  void route_dmx_to_artnet();
   void route_artnet_to_dmx(uint16_t universe, uint16_t length, uint8_t sequence,
                            uint8_t *data);
 

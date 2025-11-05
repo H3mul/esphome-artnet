@@ -43,6 +43,7 @@ void ArtNet::loop() {
     if (now - this->last_flush_time_ >= this->flush_period_ms_) {
       this->last_flush_time_ = now;
       this->send_outputs_data();
+      this->route_dmx_to_artnet();
     }
   }
 }
@@ -112,6 +113,31 @@ void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
 
   // Route ArtNet data to DMX if configured
   route_artnet_to_dmx(universe, length, sequence, data);
+}
+void ArtNet::route_dmx_to_artnet() {
+  // Iterate over all DMX to ArtNet routes
+  for (const auto &route : dmx_to_artnet_routes_) {
+    esphome::dmx::DMXComponent *dmx_component = route.first;
+    uint16_t universe = route.second;
+
+    if (dmx_component == nullptr) {
+      ESP_LOGW(TAG, "DMX component pointer is null for routing");
+      continue;
+    }
+
+    // Prepare DMX buffer
+    uint8_t *dmx_data = artnet_->getDmxFrame();
+
+    // Read the full DMX universe from the DMX component
+    dmx_component->read_universe(dmx_data, DMX_MAX_CHANNELS);
+
+    // Send the DMX data as an Art-Net frame
+    artnet_->setUniverse(universe);
+    artnet_->write(output_address_);
+
+    ESP_LOGD(TAG, "Routed DMX component at %p to ArtNet universe %d",
+             dmx_component, universe);
+  }
 }
 
 void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
