@@ -18,24 +18,17 @@ void ArtNet::register_sensor(ArtNetSensor *sensor) {
 void ArtNet::setup() {
   ESP_LOGCONFIG(TAG, "Setting up ArtNet...");
 
-  // Store instance for callback
   instance_ = this;
 
-  // Initialize the ArtNet library
   artnet_ = new ArtnetWifi();
-
-  // Register the Art-Net DMX callback
   artnet_->setArtDmxCallback(artnet_callback);
-
-  // Start listening for ArtNet packets
   artnet_->begin();
-
-  ESP_LOGCONFIG(TAG, "ArtNet setup complete");
 }
 
 void ArtNet::loop() {
-  // Process ArtNet packets
-  this->artnet_->read();
+  if (WiFi.status() == WL_CONNECTED) {
+    artnet_->read();
+  }
 }
 
 void ArtNet::dump_config() {
