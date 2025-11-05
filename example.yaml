@@ -31,6 +31,9 @@ external_components:
   - source: components
 
 artnet:
+  output:
+    address: 10.1.1.10
+    flush_period: 10ms
 
 sensor:
   - platform: artnet
@@ -48,19 +51,16 @@ sensor:
 output:
   - platform: artnet
     id: artnet_output_1
-    destination_address: 10.1.1.10
     universe: 1
     channel: 1
 
   - platform: artnet
     id: artnet_output_2
-    destination_address: 10.1.1.10
     universe: 1
     channel: 2
 
   - platform: artnet
     id: artnet_output_3
-    destination_address: 10.1.1.10
     universe: 1
     channel: 3
 

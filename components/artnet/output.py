@@ -17,7 +17,6 @@ CONF_CHANNEL = "channel"
 CONFIG_SCHEMA = output.FLOAT_OUTPUT_SCHEMA.extend({
     cv.GenerateID(): cv.declare_id(ArtNetOutput),
     cv.GenerateID(CONF_ARTNET_ID): cv.use_id(ArtNet),
-    cv.Required(CONF_DESTINATION_ADDRESS): cv.ipv4address,
     cv.Required(CONF_UNIVERSE): cv.int_range(min=0, max=15),
     cv.Required(CONF_CHANNEL): cv.int_range(min=1, max=512),
 }).extend(cv.COMPONENT_SCHEMA)
@@ -33,7 +32,6 @@ async def to_code(config):
     await output.register_output(var, config)
     
     # Set configuration
-    cg.add(var.set_destination_address(str(config[CONF_DESTINATION_ADDRESS])))
     cg.add(var.set_universe(config[CONF_UNIVERSE]))
     cg.add(var.set_channel(config[CONF_CHANNEL]))
     
