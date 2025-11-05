@@ -22,6 +22,7 @@ void ArtNetOutput::dump_config() {
 void ArtNetOutput::write_state(float state) {
   // Convert float (0.0-1.0) to DMX value (0-255)
   this->current_value_ = static_cast<uint8_t>(state * 255.0f);
+  this->unflushed_changes_ = true;
 
   ESP_LOGD(TAG, "Output universe %d channel %d set to %d", this->universe_,
            this->channel_, this->current_value_);

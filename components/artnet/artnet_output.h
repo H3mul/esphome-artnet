@@ -23,6 +23,9 @@ public:
   uint16_t get_channel() const { return this->channel_; }
   uint8_t get_current_value() const { return this->current_value_; }
 
+  void set_changes_flushed() { this->unflushed_changes_ = false; }
+  bool has_unflushed_changes() const { return this->unflushed_changes_; }
+
 protected:
   void write_state(float state) override;
 
@@ -30,6 +33,7 @@ protected:
   uint16_t universe_{0};
   uint16_t channel_{1};
   uint8_t current_value_{0};
+  bool unflushed_changes_{false};
 };
 
 } // namespace esphome::artnet

@@ -69,6 +69,8 @@ artnet:
     subnet: 0
     # Period for flushing output data to Art-Net (how often to send updates)
     flush_period: 10ms
+    # Whether to continuously send output data even if unchanged
+    continuous_output: true
 
   # Bidirectional routing between Art-Net universes and DMX buses
   route:

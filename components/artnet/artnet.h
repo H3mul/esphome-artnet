@@ -42,6 +42,10 @@ public:
     this->flush_period_ms_ = flush_period;
   }
 
+  void set_continuous_output(bool continuous_output) {
+    this->continuous_output_ = continuous_output;
+  }
+
   void set_net(uint8_t net) {
     if (net <= 127) {
       this->net_ = net;
@@ -82,6 +86,7 @@ protected:
   uint32_t last_flush_time_{0};
   uint8_t net_{0};
   uint8_t subnet_{0};
+  bool continuous_output_{false};
 
   void send_outputs_data();
 

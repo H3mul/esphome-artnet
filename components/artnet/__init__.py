@@ -20,6 +20,7 @@ CONF_OUTPUT_ADDRESS = "address"
 CONF_OUTPUT_NET = "net"
 CONF_OUTPUT_SUBNET = "subnet"
 CONF_FLUSH_PERIOD = "flush_period"
+CONF_CONTINUOUS_OUTPUT = "continuous_output"
 CONF_ROUTE = "route"
 CONF_ARTNET_TO_DMX = "artnet_to_dmx"
 CONF_DMX_TO_ARTNET = "dmx_to_artnet"
@@ -34,6 +35,7 @@ CONFIG_SCHEMA = cv.Schema({
         cv.Optional(CONF_OUTPUT_NET, default=0): cv.int_range(min=0, max=127),
         cv.Optional(CONF_OUTPUT_SUBNET, default=0): cv.int_range(min=0, max=15),
         cv.Optional(CONF_FLUSH_PERIOD, default="10ms"): cv.positive_time_period_milliseconds,
+        cv.Optional(CONF_CONTINUOUS_OUTPUT, default=False): cv.boolean,
     }),
     cv.Optional(CONF_ROUTE): cv.Schema({
         cv.Optional(CONF_ARTNET_TO_DMX): cv.All(cv.ensure_list(cv.Schema({
@@ -64,6 +66,8 @@ async def to_code(config):
             cg.add(var.set_subnet(output_config[CONF_OUTPUT_SUBNET]))
         if CONF_FLUSH_PERIOD in output_config:
             cg.add(var.set_flush_period(output_config[CONF_FLUSH_PERIOD]))
+        if CONF_CONTINUOUS_OUTPUT in output_config:
+            cg.add(var.set_continuous_output(output_config[CONF_CONTINUOUS_OUTPUT]))
     
     # Set routing configuration if present
     if CONF_ROUTE in config:

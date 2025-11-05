@@ -3,6 +3,7 @@
 #include "artnet_sensor.h"
 #include "esphome/components/wifi/wifi_component.h"
 #include "esphome/core/log.h"
+#include <cstdint>
 
 #ifdef USE_DMX_COMPONENT
 #include "esphome/components/dmx/dmx.h"
@@ -93,18 +94,25 @@ void ArtNet::dump_config() {
 
 void ArtNet::send_outputs_data() {
   for (const auto &[universe, outputs] : outputs_per_universe_) {
-    uint8_t *dmx_buffer = artnet_->getDmxFrame();
+    bool has_changes = false;
+    uint8_t *buffer = artnet_->getDmxFrame();
     // Clear DMX buffer
-    memset(dmx_buffer, 0, DMX_MAX_CHANNELS);
+    memset(buffer, 0, DMX_MAX_CHANNELS);
+
     for (auto *output : outputs) {
       uint16_t channel = output->get_channel();
       if (channel >= 1 && channel <= DMX_MAX_CHANNELS) {
-        dmx_buffer[channel - 1] = output->get_current_value();
+        has_changes |= output->has_unflushed_changes();
+        output->set_changes_flushed();
+        buffer[channel - 1] = output->get_current_value();
       }
     }
 
-    // Calculate the full universe address: net (7 bits) + subnet (4 bits) +
-    // universe (4 bits)
+    // if we don't have updates to push, just stop here
+    if (!has_changes && !this->continuous_output_) {
+      return;
+    }
+
     uint16_t full_universe =
         calculate_artnet_universe(this->net_, this->subnet_, universe);
     artnet_->setUniverse(full_universe);
