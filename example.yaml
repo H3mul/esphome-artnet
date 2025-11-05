@@ -59,13 +59,17 @@ dmx:
 
 # Configure Art-Net component with output address and routing
 artnet:
+  # Incoming frame filtering: only process frames on this net/subnet
+  net: 0
+  subnet: 0
+
   # Output configuration: sends Art-Net packets to this address
   output:
     # Target IP address for Art-Net packets (typically the lighting console or network address)
     address: 10.1.1.10
-    # Art-Net net (0-127)
+    # Art-Net net to use for outgoing frames (0-127)
     net: 0
-    # Art-Net subnet (0-15)
+    # Art-Net subnet to use for outgoing frames (0-15)
     subnet: 0
     # Period for flushing output data to Art-Net (how often to send updates)
     flush_period: 10ms

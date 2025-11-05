@@ -28,6 +28,16 @@ static uint16_t calculate_artnet_universe(uint8_t net, uint8_t subnet,
   return (net << 8) | (subnet << 4) | universe;
 }
 
+// Helper function to parse full Art-Net universe address
+// Extracts net (7 bits), subnet (4 bits), and universe (4 bits) from a 15-bit
+// address
+static void parse_artnet_universe(uint16_t full_universe, uint8_t &net,
+                                  uint8_t &subnet, uint8_t &universe) {
+  net = (full_universe >> 8) & 0x7F;    // 7 bits (bits 14-8)
+  subnet = (full_universe >> 4) & 0x0F; // 4 bits (bits 7-4)
+  universe = full_universe & 0x0F;      // 4 bits (bits 3-0)
+}
+
 void ArtNet::register_sensor(ArtNetSensor *sensor) {
   sensors_.push_back(sensor);
 }
@@ -113,8 +123,8 @@ void ArtNet::send_outputs_data() {
       return;
     }
 
-    uint16_t full_universe =
-        calculate_artnet_universe(this->net_, this->subnet_, universe);
+    uint16_t full_universe = calculate_artnet_universe(
+        this->output_net_, this->output_subnet_, universe);
     artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
@@ -128,12 +138,25 @@ void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
   }
 }
 
-void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
+void ArtNet::on_artnet_frame(uint16_t full_universe, uint16_t length,
                              uint8_t sequence, uint8_t *data) {
-  ESP_LOGV(TAG, "Received Art-Net frame: universe=%d, length=%d, sequence=%d",
-           universe, length, sequence);
+  // Parse the full universe address into net, subnet, and universe components
+  uint8_t net;
+  uint8_t subnet;
+  uint8_t universe;
+  parse_artnet_universe(full_universe, net, subnet, universe);
 
-  // Update registered sensors
+  // Filter frames that don't match our configured net and subnet
+  if (net != this->net_ || subnet != this->subnet_) {
+    return; // Ignore frames from other nets/subnets
+  }
+
+  ESP_LOGV(TAG,
+           "Received Art-Net frame: net=%d, subnet=%d, universe=%d, "
+           "length=%d, sequence=%d",
+           net, subnet, universe, length, sequence);
+
+  // Update registered sensors with the actual universe index
   for (auto *sensor : sensors_) {
     if (sensor->get_universe() == universe && sensor->get_channel() <= length) {
       sensor->update_value(data[sensor->get_channel() - 1]);
@@ -162,8 +185,8 @@ void ArtNet::route_dmx_to_artnet() {
     dmx_component->read_universe(dmx_data, DMX_MAX_CHANNELS);
 
     // Send the DMX data as an Art-Net frame
-    uint16_t full_universe =
-        calculate_artnet_universe(this->net_, this->subnet_, universe);
+    uint16_t full_universe = calculate_artnet_universe(
+        this->output_net_, this->output_subnet_, universe);
     artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);

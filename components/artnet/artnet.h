@@ -46,6 +46,20 @@ public:
     this->continuous_output_ = continuous_output;
   }
 
+  void set_output_net(uint8_t net) {
+    if (net <= 127) {
+      this->output_net_ = net;
+    }
+  }
+  uint8_t get_output_net() const { return this->output_net_; }
+
+  void set_output_subnet(uint8_t subnet) {
+    if (subnet <= 15) {
+      this->output_subnet_ = subnet;
+    }
+  }
+  uint8_t get_output_subnet() const { return this->output_subnet_; }
+
   void set_net(uint8_t net) {
     if (net <= 127) {
       this->net_ = net;
@@ -84,6 +98,8 @@ protected:
   IPAddress output_address_;
   uint32_t flush_period_ms_{100};
   uint32_t last_flush_time_{0};
+  uint8_t output_net_{0};
+  uint8_t output_subnet_{0};
   uint8_t net_{0};
   uint8_t subnet_{0};
   bool continuous_output_{false};
