@@ -9,9 +9,11 @@
 #include <utility>
 #include <vector>
 
+#ifdef USE_DMX_COMPONENT
 namespace esphome::dmx {
 class DMXComponent; // Forward declaration
 }
+#endif
 
 namespace esphome::artnet {
 
@@ -40,6 +42,7 @@ public:
     this->flush_period_ms_ = flush_period;
   }
 
+#ifdef USE_DMX_COMPONENT
   void add_artnet_to_dmx_route(esphome::dmx::DMXComponent *dmx_component,
                                uint16_t universe) {
     artnet_to_dmx_routes_.push_back(std::make_pair(dmx_component, universe));
@@ -49,6 +52,7 @@ public:
                                uint16_t universe) {
     dmx_to_artnet_routes_.push_back(std::make_pair(dmx_component, universe));
   }
+#endif
 
   static void register_sensor(ArtNetSensor *sensor);
   static void register_output(ArtNetOutput *output);
@@ -63,16 +67,7 @@ protected:
   uint32_t flush_period_ms_{100};
   uint32_t last_flush_time_{0};
 
-  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
-      artnet_to_dmx_routes_;
-  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
-      dmx_to_artnet_routes_;
-
   void send_outputs_data();
-
-  void route_dmx_to_artnet();
-  void route_artnet_to_dmx(uint16_t universe, uint16_t length, uint8_t sequence,
-                           uint8_t *data);
 
   // Callback for incoming Art-Net frames
   virtual void on_artnet_frame(uint16_t universe, uint16_t length,
@@ -81,6 +76,17 @@ protected:
   // Static callback function for ArtnetWifi library
   static void artnet_callback(uint16_t universe, uint16_t length,
                               uint8_t sequence, uint8_t *data);
+
+#ifdef USE_DMX_COMPONENT
+  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
+      artnet_to_dmx_routes_;
+  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
+      dmx_to_artnet_routes_;
+#endif
+
+  void route_dmx_to_artnet();
+  void route_artnet_to_dmx(uint16_t universe, uint16_t length, uint8_t sequence,
+                           uint8_t *data);
 };
 
 } // namespace esphome::artnet

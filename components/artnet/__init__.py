@@ -60,22 +60,29 @@ async def to_code(config):
     # Set routing configuration if present
     if CONF_ROUTE in config:
         route_config = config[CONF_ROUTE]
+
+        include_dmx = False
         
         # Configure ArtNet to DMX routing
         if CONF_ARTNET_TO_DMX in route_config:
+            include_dmx = len(route_config[CONF_ARTNET_TO_DMX]) > 0
             for route in route_config[CONF_ARTNET_TO_DMX]:
                 dmx_component = await cg.get_variable(route[CONF_DMX_ID])
                 universe = route[CONF_UNIVERSE]
                 # Pass the resolved DMX component pointer
                 cg.add(var.add_artnet_to_dmx_route(dmx_component, universe))
-        
-        # Configure DMX to ArtNet routing  
+            
+        # Configure DMX to ArtNet routing
         if CONF_DMX_TO_ARTNET in route_config:
+            include_dmx = include_dmx or len(route_config[CONF_DMX_TO_ARTNET]) > 0
             for route in route_config[CONF_DMX_TO_ARTNET]:
                 dmx_component = await cg.get_variable(route[CONF_DMX_ID])
                 universe = route[CONF_UNIVERSE]
                 # Pass the resolved DMX component pointer
                 cg.add(var.add_dmx_to_artnet_route(dmx_component, universe))
+
+        if include_dmx:
+            cg.add_build_flag("-DUSE_DMX_COMPONENT")
     
     # Add the external library dependency
     cg.add_library("rstephan/ArtnetWifi", "1.6.1")

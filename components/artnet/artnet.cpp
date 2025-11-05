@@ -1,11 +1,13 @@
 #include "artnet.h"
 #include "artnet_output.h"
 #include "artnet_sensor.h"
-#include "esphome/components/dmx/dmx.h"
 #include "esphome/core/log.h"
 
-#define DMX_MAX_CHANNELS 512
+#ifdef USE_DMX_COMPONENT
+#include "esphome/components/dmx/dmx.h"
+#endif
 
+#define DMX_MAX_CHANNELS 512
 namespace esphome::artnet {
 
 static const char *const TAG = "artnet";
@@ -43,7 +45,10 @@ void ArtNet::loop() {
     if (now - this->last_flush_time_ >= this->flush_period_ms_) {
       this->last_flush_time_ = now;
       this->send_outputs_data();
+
+#ifdef USE_DMX_COMPONENT
       this->route_dmx_to_artnet();
+#endif
     }
   }
 }
@@ -54,6 +59,7 @@ void ArtNet::dump_config() {
   ESP_LOGCONFIG(TAG, "  Output Address: %s",
                 this->output_address_.toString().c_str());
 
+#ifdef USE_DMX_COMPONENT
   // Log routing configuration
   if (!artnet_to_dmx_routes_.empty()) {
     ESP_LOGCONFIG(TAG, "ArtNet to DMX routes:");
@@ -70,6 +76,7 @@ void ArtNet::dump_config() {
                     route.second);
     }
   }
+#endif
 }
 
 void ArtNet::send_outputs_data() {
@@ -113,6 +120,7 @@ void ArtNet::on_artnet_frame(uint16_t universe, uint16_t length,
   route_artnet_to_dmx(universe, length, sequence, data);
 }
 void ArtNet::route_dmx_to_artnet() {
+#ifdef USE_DMX_COMPONENT
   // Iterate over all DMX to ArtNet routes
   for (const auto &route : dmx_to_artnet_routes_) {
     esphome::dmx::DMXComponent *dmx_component = route.first;
@@ -133,11 +141,13 @@ void ArtNet::route_dmx_to_artnet() {
     artnet_->setUniverse(universe);
     artnet_->write(output_address_);
   }
+#endif
 }
 
 void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
                                  uint8_t sequence, uint8_t *data) {
   // Check if this universe should be routed to DMX
+#ifdef USE_DMX_COMPONENT
   for (const auto &route : artnet_to_dmx_routes_) {
     if (route.second == universe) {
       esphome::dmx::DMXComponent *dmx_component = route.first;
@@ -151,6 +161,7 @@ void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
       dmx_component->send_universe(data, length);
     }
   }
+#endif
 }
 
 } // namespace esphome::artnet
