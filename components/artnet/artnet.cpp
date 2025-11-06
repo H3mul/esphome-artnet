@@ -1,9 +1,11 @@
 #include "artnet.h"
 #include "artnet_output.h"
+#include "artnet_poll_reply.h"
 #include "artnet_sensor.h"
 #include "esphome/components/wifi/wifi_component.h"
 #include "esphome/core/log.h"
 #include <cstdint>
+#include <cstring>
 
 #ifdef USE_DMX_COMPONENT
 #include "esphome/components/dmx/dmx.h"
@@ -63,8 +65,23 @@ void ArtNet::loop() {
       ESP_LOGV(TAG, "Received Art-Net frame with opcode: %u", opcode);
     }
 
-    // Check if it's time to flush outputs
+    // Handle ArtPoll by scheduling a reply
+    if (opcode == ART_POLL) {
+      this->poll_reply_sender_ip_ = artnet_->getSenderIp();
+      this->last_poll_reply_time_ = millis();
+      // Generate random delay between 0 and 1000ms per Art-Net spec
+      this->poll_reply_delay_ms_ = random(0, POLL_REPLY_MAX_DELAY_MS + 1);
+    }
+
+    // Check if it's time to send a pending ArtPollReply
     uint32_t now = millis();
+    if (this->poll_reply_sender_ip_ != IPAddress(0, 0, 0, 0) &&
+        (now - this->last_poll_reply_time_) >= this->poll_reply_delay_ms_) {
+      this->send_poll_reply();
+      this->poll_reply_sender_ip_ = IPAddress(0, 0, 0, 0); // Clear
+    }
+
+    // Check if it's time to flush outputs
     if (now - this->last_flush_time_ >= this->flush_period_ms_) {
       this->last_flush_time_ = now;
       this->send_outputs_data();
@@ -218,6 +235,27 @@ void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
     }
   }
 #endif
+}
+
+void ArtNet::send_poll_reply() {
+  uint8_t poll_reply[ART_POLL_REPLY_LENGTH];
+
+  // Increment and roll over the poll response counter
+  this->poll_response_counter_ = (this->poll_response_counter_ + 1) % 10000;
+
+  // Build the poll reply frame
+  build_art_poll_reply(poll_reply, WiFi.localIP(), this->net_, this->subnet_,
+                       this->name_short_, this->name_long_,
+                       this->poll_response_counter_);
+
+  // Send the reply via UDP to the sender's IP
+  WiFiUDP Udp;
+  Udp.beginPacket(this->poll_reply_sender_ip_, ART_NET_PORT);
+  Udp.write(poll_reply, sizeof(poll_reply));
+  Udp.endPacket();
+
+  ESP_LOGD(TAG, "Sent ArtPollReply to %s",
+           this->poll_reply_sender_ip_.toString().c_str());
 }
 
 } // namespace esphome::artnet

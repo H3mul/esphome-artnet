@@ -46,6 +46,16 @@ public:
     this->continuous_output_ = continuous_output;
   }
 
+  void set_name_short(const std::string &name_short) {
+    this->name_short_ = name_short;
+  }
+  const std::string &get_name_short() const { return this->name_short_; }
+
+  void set_name_long(const std::string &name_long) {
+    this->name_long_ = name_long;
+  }
+  const std::string &get_name_long() const { return this->name_long_; }
+
   void set_output_net(uint8_t net) {
     if (net <= 127) {
       this->output_net_ = net;
@@ -103,6 +113,14 @@ protected:
   uint8_t net_{0};
   uint8_t subnet_{0};
   bool continuous_output_{false};
+  std::string name_short_{};
+  std::string name_long_{};
+  IPAddress poll_reply_sender_ip_;
+  uint32_t last_poll_reply_time_{0};
+  uint32_t poll_reply_delay_ms_{0};
+  uint16_t poll_response_counter_{0};
+  static const uint32_t POLL_REPLY_MAX_DELAY_MS =
+      1000; // Random delay up to 1s before sending reply
 
   void send_outputs_data();
 
@@ -124,6 +142,7 @@ protected:
   void route_dmx_to_artnet();
   void route_artnet_to_dmx(uint16_t universe, uint16_t length, uint8_t sequence,
                            uint8_t *data);
+  void send_poll_reply();
 };
 
 } // namespace esphome::artnet

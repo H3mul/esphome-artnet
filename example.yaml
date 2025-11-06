@@ -59,6 +59,10 @@ dmx:
 
 # Configure Art-Net component with output address and routing
 artnet:
+  # Node name for ArtPollReply identification
+  name_short: "esphome-artnet-dmx"
+  name_long: "ESPHome ArtNet to DMX Node"
+
   # Incoming frame filtering: only process frames on this net/subnet
   net: 0
   subnet: 0

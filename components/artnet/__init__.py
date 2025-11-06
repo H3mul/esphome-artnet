@@ -15,6 +15,8 @@ DMXComponent = dmx_ns.class_("DMXComponent")
 
 # Configuration keys
 CONF_ARTNET_ID = "artnet_id"
+CONF_NAME_SHORT = "name_short"
+CONF_NAME_LONG = "name_long"
 CONF_NET = "net"
 CONF_SUBNET = "subnet"
 CONF_OUTPUT = "output"
@@ -30,6 +32,8 @@ CONF_UNIVERSE = "universe"
 # Configuration schema for the global artnet component
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(ArtNet),
+    cv.Optional(CONF_NAME_SHORT, default=""): cv.string,
+    cv.Optional(CONF_NAME_LONG, default=""): cv.string,
     cv.Optional(CONF_NET, default=0): cv.int_range(min=0, max=127),
     cv.Optional(CONF_SUBNET, default=0): cv.int_range(min=0, max=15),
     cv.Optional(CONF_OUTPUT): cv.Schema({
@@ -51,11 +55,18 @@ CONFIG_SCHEMA = cv.Schema({
     }),
 }).extend(cv.COMPONENT_SCHEMA)
 
-
 async def to_code(config):
     # Create the global ArtNet component
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
+    
+    # Set name_short if present
+    if CONF_NAME_SHORT in config:
+        cg.add(var.set_name_short(config[CONF_NAME_SHORT]))
+    
+    # Set name_long if present
+    if CONF_NAME_LONG in config:
+        cg.add(var.set_name_long(config[CONF_NAME_LONG]))
     
     # Set incoming frame filtering (net and subnet)
     if CONF_NET in config:
