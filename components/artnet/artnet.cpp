@@ -187,7 +187,7 @@ void ArtNet::on_artnet_frame(uint16_t full_universe, uint16_t length,
   }
 
   // Route ArtNet data to DMX if configured
-  route_artnet_to_dmx(universe, length, sequence, data);
+  route_artnet_to_dmx(universe, data, length);
 }
 void ArtNet::route_dmx_to_artnet() {
 #ifdef USE_DMX_COMPONENT
@@ -213,12 +213,13 @@ void ArtNet::route_dmx_to_artnet() {
     artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
+    ESP_LOGD(TAG, "Sent frame from DMX to Art-Net for universe %d", universe);
   }
 #endif
 }
 
-void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
-                                 uint8_t sequence, uint8_t *data) {
+void ArtNet::route_artnet_to_dmx(uint8_t universe, uint8_t *data,
+                                 uint16_t length) {
   // Check if this universe should be routed to DMX
 #ifdef USE_DMX_COMPONENT
   for (const auto &route : artnet_to_dmx_routes_) {
@@ -232,6 +233,7 @@ void ArtNet::route_artnet_to_dmx(uint16_t universe, uint16_t length,
 
       // Write the full DMX universe to the DMX component
       dmx_component->send_universe(data, length);
+      ESP_LOGD(TAG, "Sent frame from Art-Net to DMX for universe %d", universe);
     }
   }
 #endif
