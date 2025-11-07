@@ -17,6 +17,18 @@ class DMXComponent; // Forward declaration
 
 namespace esphome::artnet {
 
+enum Direction : std::uint8_t {
+  DIRECTION_TO_DMX,    // ArtNet -> DMX
+  DIRECTION_TO_ARTNET, // DMX -> ArtNet
+};
+
+struct Route {
+  void *dmx_component; // esphome::dmx::DMXComponent* (forward declared)
+  uint16_t universe;
+  Direction direction;
+  bool enabled;
+};
+
 class ArtNetSensor; // Forward declaration
 class ArtNetOutput; // Forward declaration
 
@@ -85,14 +97,9 @@ public:
   uint8_t get_subnet() const { return this->subnet_; }
 
 #ifdef USE_DMX_COMPONENT
-  void add_artnet_to_dmx_route(esphome::dmx::DMXComponent *dmx_component,
-                               uint16_t universe) {
-    artnet_to_dmx_routes_.push_back(std::make_pair(dmx_component, universe));
-  }
-
-  void add_dmx_to_artnet_route(esphome::dmx::DMXComponent *dmx_component,
-                               uint16_t universe) {
-    dmx_to_artnet_routes_.push_back(std::make_pair(dmx_component, universe));
+  void add_route(esphome::dmx::DMXComponent *dmx_component, uint16_t universe,
+                 Direction direction, bool enabled) {
+    routes_.push_back({dmx_component, universe, direction, enabled});
   }
 #endif
 
@@ -133,10 +140,7 @@ protected:
                               uint8_t sequence, uint8_t *data);
 
 #ifdef USE_DMX_COMPONENT
-  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
-      artnet_to_dmx_routes_;
-  std::vector<std::pair<esphome::dmx::DMXComponent *, uint16_t>>
-      dmx_to_artnet_routes_;
+  std::vector<Route> routes_;
 #endif
 
   void route_dmx_to_artnet();

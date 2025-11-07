@@ -82,17 +82,15 @@ artnet:
 
   # Bidirectional routing between Art-Net universes and DMX buses
   route:
-    # Route Art-Net packets to physical DMX buses
-    artnet_to_dmx:
-      # Art-Net universe 1 is sent out on the dmx_bus_a (sends DMX to fixtures)
-      - dmx_id: dmx_bus_a
-        universe: 1
+    - dmx_id: dmx_bus_a
+      universe: 1
+      enabled: true
+      direction: to_dmx
 
-    # Route physical DMX data to Art-Net universes
-    dmx_to_artnet:
-      # Data received on dmx_bus_b (from fixtures/controllers) is sent as Art-Net universe 2
-      - dmx_id: dmx_bus_b
-        universe: 2
+    - dmx_id: dmx_bus_b
+      universe: 2
+      enabled: true
+      direction: to_artnet
 
 # Sensors to read Art-Net input data and expose as Home Assistant entities
 sensor:

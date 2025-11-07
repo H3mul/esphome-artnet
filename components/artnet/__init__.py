@@ -25,10 +25,17 @@ CONF_OUTPUT_ADDRESS = "address"
 CONF_FLUSH_PERIOD = "flush_period"
 CONF_CONTINUOUS_OUTPUT = "continuous_output"
 CONF_ROUTE = "route"
-CONF_ARTNET_TO_DMX = "artnet_to_dmx"
-CONF_DMX_TO_ARTNET = "dmx_to_artnet"
 CONF_DMX_ID = "dmx_id"
 CONF_UNIVERSE = "universe"
+CONF_DIRECTION = "direction"
+CONF_ENABLED = "enabled"
+
+# Direction enum for routing
+Direction = artnet_ns.enum("Direction")
+DIRECTION_MODES = {
+    "to_dmx": Direction.DIRECTION_TO_DMX,
+    "to_artnet": Direction.DIRECTION_TO_ARTNET,
+}
 
 # Configuration schema for the global artnet component
 CONFIG_SCHEMA = cv.Schema({
@@ -44,16 +51,12 @@ CONFIG_SCHEMA = cv.Schema({
         cv.Optional(CONF_FLUSH_PERIOD, default="10ms"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_CONTINUOUS_OUTPUT, default=False): cv.boolean,
     }),
-    cv.Optional(CONF_ROUTE): cv.Schema({
-        cv.Optional(CONF_ARTNET_TO_DMX): cv.All(cv.ensure_list(cv.Schema({
-            cv.Required(CONF_DMX_ID): cv.use_id(DMXComponent),
-            cv.Required(CONF_UNIVERSE): cv.int_range(min=0, max=15),
-        }))),
-        cv.Optional(CONF_DMX_TO_ARTNET): cv.All(cv.ensure_list(cv.Schema({
-            cv.Required(CONF_DMX_ID): cv.use_id(DMXComponent),
-            cv.Required(CONF_UNIVERSE): cv.int_range(min=0, max=15),
-        }))),
-    }),
+    cv.Optional(CONF_ROUTE): cv.All(cv.ensure_list(cv.Schema({
+        cv.Required(CONF_DMX_ID): cv.use_id(DMXComponent),
+        cv.Required(CONF_UNIVERSE): cv.int_range(min=0, max=15),
+        cv.Required(CONF_DIRECTION): cv.enum(DIRECTION_MODES, lower=True),
+        cv.Optional(CONF_ENABLED, default=True): cv.boolean,
+    }))),
 }).extend(cv.COMPONENT_SCHEMA)
 
 async def to_code(config):
@@ -91,30 +94,20 @@ async def to_code(config):
     
     # Set routing configuration if present
     if CONF_ROUTE in config:
-        route_config = config[CONF_ROUTE]
-
-        include_dmx = False
-        
-        # Configure ArtNet to DMX routing
-        if CONF_ARTNET_TO_DMX in route_config:
-            include_dmx = len(route_config[CONF_ARTNET_TO_DMX]) > 0
-            for route in route_config[CONF_ARTNET_TO_DMX]:
+        routes = config[CONF_ROUTE]
+        if routes:
+            # Process each route entry
+            for route in routes:
                 dmx_component = await cg.get_variable(route[CONF_DMX_ID])
                 universe = route[CONF_UNIVERSE]
-                # Pass the resolved DMX component pointer
-                cg.add(var.add_artnet_to_dmx_route(dmx_component, universe))
-            
-        # Configure DMX to ArtNet routing
-        if CONF_DMX_TO_ARTNET in route_config:
-            include_dmx = include_dmx or len(route_config[CONF_DMX_TO_ARTNET]) > 0
-            for route in route_config[CONF_DMX_TO_ARTNET]:
-                dmx_component = await cg.get_variable(route[CONF_DMX_ID])
-                universe = route[CONF_UNIVERSE]
-                # Pass the resolved DMX component pointer
-                cg.add(var.add_dmx_to_artnet_route(dmx_component, universe))
+                direction = route[CONF_DIRECTION]
+                enabled = route[CONF_ENABLED]
 
-        if include_dmx:
-            cg.add_build_flag("-DUSE_DMX_COMPONENT")
-    
+                # Add the route
+                cg.add(var.add_route(dmx_component, universe, direction, enabled))
+
+            if (len(routes) > 0):
+                cg.add_build_flag("-DUSE_DMX_COMPONENT")
+
     # Add the external library dependency
     cg.add_library("rstephan/ArtnetWifi", "1.6.1")

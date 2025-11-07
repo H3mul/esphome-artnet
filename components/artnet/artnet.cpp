@@ -101,19 +101,17 @@ void ArtNet::dump_config() {
 
 #ifdef USE_DMX_COMPONENT
   // Log routing configuration
-  if (!artnet_to_dmx_routes_.empty()) {
-    ESP_LOGCONFIG(TAG, "ArtNet to DMX routes:");
-    for (const auto &route : artnet_to_dmx_routes_) {
-      ESP_LOGCONFIG(TAG, "  DMX component at %s -> Universe %d",
-                    route.first->get_name().c_str(), route.second);
-    }
-  }
-
-  if (!dmx_to_artnet_routes_.empty()) {
-    ESP_LOGCONFIG(TAG, "DMX to ArtNet routes:");
-    for (const auto &route : dmx_to_artnet_routes_) {
-      ESP_LOGCONFIG(TAG, "  DMX component at %s -> Universe %d",
-                    route.first->get_name().c_str(), route.second);
+  if (!routes_.empty()) {
+    ESP_LOGCONFIG(TAG, "DMX Routing:");
+    for (const auto &route : routes_) {
+      const char *direction_str =
+          route.direction == esphome::artnet::DIRECTION_TO_DMX ? "ArtNet->DMX"
+                                                               : "DMX->ArtNet";
+      const char *status = route.enabled ? "enabled" : "disabled";
+      esphome::dmx::DMXComponent *dmx_component =
+          static_cast<esphome::dmx::DMXComponent *>(route.dmx_component);
+      ESP_LOGCONFIG(TAG, "  %s - Universe %d [%s] %s", direction_str,
+                    route.universe, dmx_component->get_name().c_str(), status);
     }
   }
 #endif
@@ -191,10 +189,17 @@ void ArtNet::on_artnet_frame(uint16_t full_universe, uint16_t length,
 }
 void ArtNet::route_dmx_to_artnet() {
 #ifdef USE_DMX_COMPONENT
-  // Iterate over all DMX to ArtNet routes
-  for (const auto &route : dmx_to_artnet_routes_) {
-    esphome::dmx::DMXComponent *dmx_component = route.first;
-    uint16_t universe = route.second;
+  // Iterate over all routes, filtering for DMX to ArtNet direction
+  for (const auto &route : routes_) {
+    // Skip if not enabled or wrong direction
+    if (!route.enabled ||
+        route.direction != esphome::artnet::DIRECTION_TO_ARTNET) {
+      continue;
+    }
+
+    esphome::dmx::DMXComponent *dmx_component =
+        static_cast<esphome::dmx::DMXComponent *>(route.dmx_component);
+    uint16_t universe = route.universe;
 
     if (dmx_component == nullptr) {
       ESP_LOGW(TAG, "DMX component pointer is null for routing");
@@ -222,20 +227,25 @@ void ArtNet::route_artnet_to_dmx(uint8_t universe, uint8_t *data,
                                  uint16_t length) {
   // Check if this universe should be routed to DMX
 #ifdef USE_DMX_COMPONENT
-  for (const auto &route : artnet_to_dmx_routes_) {
-    if (route.second == universe) {
-      esphome::dmx::DMXComponent *dmx_component = route.first;
-
-      if (dmx_component == nullptr) {
-        ESP_LOGW(TAG, "DMX component pointer is null for routing");
-        continue;
-      }
-
-      // Write the full DMX universe to the DMX component
-      dmx_component->send_universe(data, length);
-      ESP_LOGVV(TAG, "Sent frame from Art-Net to DMX for universe %d",
-                universe);
+  for (const auto &route : routes_) {
+    // Skip if not enabled, wrong direction, or wrong universe
+    if (!route.enabled ||
+        route.direction != esphome::artnet::DIRECTION_TO_DMX ||
+        route.universe != universe) {
+      continue;
     }
+
+    esphome::dmx::DMXComponent *dmx_component =
+        static_cast<esphome::dmx::DMXComponent *>(route.dmx_component);
+
+    if (dmx_component == nullptr) {
+      ESP_LOGW(TAG, "DMX component pointer is null for routing");
+      continue;
+    }
+
+    // Write the full DMX universe to the DMX component
+    dmx_component->send_universe(data, length);
+    ESP_LOGVV(TAG, "Sent frame from Art-Net to DMX for universe %d", universe);
   }
 #endif
 }
