@@ -104,16 +104,16 @@ void ArtNet::dump_config() {
   if (!artnet_to_dmx_routes_.empty()) {
     ESP_LOGCONFIG(TAG, "ArtNet to DMX routes:");
     for (const auto &route : artnet_to_dmx_routes_) {
-      ESP_LOGCONFIG(TAG, "  Universe %d -> DMX component at %p", route.second,
-                    route.first);
+      ESP_LOGCONFIG(TAG, "  DMX component at %s -> Universe %d",
+                    route.first->get_name().c_str(), route.second);
     }
   }
 
   if (!dmx_to_artnet_routes_.empty()) {
     ESP_LOGCONFIG(TAG, "DMX to ArtNet routes:");
     for (const auto &route : dmx_to_artnet_routes_) {
-      ESP_LOGCONFIG(TAG, "  DMX component at %p -> Universe %d", route.first,
-                    route.second);
+      ESP_LOGCONFIG(TAG, "  DMX component at %s -> Universe %d",
+                    route.first->get_name().c_str(), route.second);
     }
   }
 #endif
@@ -213,7 +213,7 @@ void ArtNet::route_dmx_to_artnet() {
     artnet_->setUniverse(full_universe);
     artnet_->setLength(DMX_MAX_CHANNELS);
     artnet_->write(output_address_);
-    ESP_LOGD(TAG, "Sent frame from DMX to Art-Net for universe %d", universe);
+    ESP_LOGVV(TAG, "Sent frame from DMX to Art-Net for universe %d", universe);
   }
 #endif
 }
@@ -233,7 +233,8 @@ void ArtNet::route_artnet_to_dmx(uint8_t universe, uint8_t *data,
 
       // Write the full DMX universe to the DMX component
       dmx_component->send_universe(data, length);
-      ESP_LOGD(TAG, "Sent frame from Art-Net to DMX for universe %d", universe);
+      ESP_LOGVV(TAG, "Sent frame from Art-Net to DMX for universe %d",
+                universe);
     }
   }
 #endif

@@ -12,6 +12,7 @@ ArtNet = artnet_ns.class_("ArtNet", cg.Component)
 # Get reference to DMX component namespace - using use_id requires the component to be available
 dmx_ns = cg.esphome_ns.namespace("dmx")
 DMXComponent = dmx_ns.class_("DMXComponent")
+DMXMode = dmx_ns.enum("DMXMode")
 
 # Configuration keys
 CONF_ARTNET_ID = "artnet_id"
