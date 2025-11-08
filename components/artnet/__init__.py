@@ -96,6 +96,17 @@ async def to_code(config):
     if CONF_ROUTE in config:
         routes = config[CONF_ROUTE]
         if routes:
+            # Check for duplicate DMX bus IDs
+            dmx_ids_seen = set()
+            for route in routes:
+                dmx_id = route[CONF_DMX_ID]
+                if dmx_id in dmx_ids_seen:
+                    raise cv.Invalid(
+                        f"DMX bus ID '{dmx_id}' is used multiple times in routing configuration. "
+                        "Each DMX bus can only be used once."
+                    )
+                dmx_ids_seen.add(dmx_id)
+            
             # Process each route entry
             for route in routes:
                 dmx_component = await cg.get_variable(route[CONF_DMX_ID])
