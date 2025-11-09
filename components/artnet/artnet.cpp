@@ -245,7 +245,8 @@ void ArtNet::route_artnet_to_dmx(uint8_t universe, uint8_t *data,
 
     // Write the full DMX universe to the DMX component
     dmx_component->send_universe(data, length);
-    ESP_LOGVV(TAG, "Sent frame from Art-Net to DMX for universe %d", universe);
+    ESP_LOGVV(TAG, "Sent frame from Art-Net universe %d to DMX %s", universe,
+              dmx_component->get_name().c_str());
   }
 #endif
 }
