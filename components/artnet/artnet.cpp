@@ -65,9 +65,7 @@ void ArtNet::loop() {
     }
 
     if (opcode == ART_DMX) {
-#ifdef USE_DMX_COMPONENT
       this->handle_artnet_dmx_frame();
-#endif
     }
     // Handle ArtPoll by scheduling a reply
     else if (opcode == ART_POLL) {
