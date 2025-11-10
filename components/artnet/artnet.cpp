@@ -54,19 +54,23 @@ void ArtNet::setup() {
   instance_ = this;
 
   artnet_ = new ArtnetWifi();
-  artnet_->setArtDmxCallback(artnet_callback);
   artnet_->begin();
 }
 
 void ArtNet::loop() {
   if (wifi::global_wifi_component->is_connected()) {
-    uint32_t opcode = artnet_->read();
+    uint32_t opcode = artnet_get_latest();
     if (opcode != 0) {
       ESP_LOGV(TAG, "Received Art-Net frame with opcode: %u", opcode);
     }
 
+    if (opcode == ART_DMX) {
+#ifdef USE_DMX_COMPONENT
+      this->handle_artnet_dmx_frame();
+#endif
+    }
     // Handle ArtPoll by scheduling a reply
-    if (opcode == ART_POLL) {
+    else if (opcode == ART_POLL) {
       this->poll_reply_sender_ip_ = artnet_->getSenderIp();
       this->last_poll_reply_time_ = millis();
       // Generate random delay between 0 and 1000ms per Art-Net spec
@@ -152,15 +156,12 @@ void ArtNet::send_outputs_data() {
   }
 }
 
-void ArtNet::artnet_callback(uint16_t universe, uint16_t length,
-                             uint8_t sequence, uint8_t *data) {
-  if (instance_ != nullptr) {
-    instance_->on_artnet_frame(universe, length, sequence, data);
-  }
-}
+void ArtNet::handle_artnet_dmx_frame() {
+  uint16_t full_universe = artnet_->getUniverse();
+  uint8_t *data = artnet_->getDmxFrame();
+  uint16_t length = artnet_->getLength();
+  uint8_t sequence = artnet_->getSequence();
 
-void ArtNet::on_artnet_frame(uint16_t full_universe, uint16_t length,
-                             uint8_t sequence, uint8_t *data) {
   // Parse the full universe address into net, subnet, and universe components
   uint8_t net;
   uint8_t subnet;
@@ -270,6 +271,29 @@ void ArtNet::send_poll_reply() {
 
   ESP_LOGD(TAG, "Sent ArtPollReply to %s",
            this->poll_reply_sender_ip_.toString().c_str());
+}
+
+// Discard all packets except the latest one
+uint32_t ArtNet::artnet_get_latest() {
+  uint32_t last_opcode = 0;
+  uint32_t opcode;
+  uint32_t discarded_count = 0;
+
+  // Keep reading until we get 0 (no more packets)
+  while ((opcode = artnet_->read()) != 0) {
+    if (last_opcode != 0) {
+      // We already had an opcode, so this one will be discarded
+      discarded_count++;
+    }
+    last_opcode = opcode;
+  }
+
+  if (discarded_count > 0) {
+    ESP_LOGV(TAG, "Discarded %u Art-Net frames, processing latest",
+             discarded_count);
+  }
+
+  return last_opcode;
 }
 
 } // namespace esphome::artnet

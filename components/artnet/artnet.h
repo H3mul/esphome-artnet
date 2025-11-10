@@ -131,13 +131,7 @@ protected:
 
   void send_outputs_data();
 
-  // Callback for incoming Art-Net frames
-  virtual void on_artnet_frame(uint16_t universe, uint16_t length,
-                               uint8_t sequence, uint8_t *data);
-
-  // Static callback function for ArtnetWifi library
-  static void artnet_callback(uint16_t universe, uint16_t length,
-                              uint8_t sequence, uint8_t *data);
+  virtual void handle_artnet_dmx_frame();
 
 #ifdef USE_DMX_COMPONENT
   std::vector<Route> routes_;
@@ -146,6 +140,7 @@ protected:
   void route_dmx_to_artnet();
   void route_artnet_to_dmx(uint8_t universe, uint8_t *data, uint16_t length);
   void send_poll_reply();
+  static uint32_t artnet_get_latest();
 };
 
 } // namespace esphome::artnet
