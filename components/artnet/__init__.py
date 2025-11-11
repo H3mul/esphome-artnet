@@ -15,7 +15,6 @@ DMXComponent = dmx_ns.class_("DMXComponent")
 DMXMode = dmx_ns.enum("DMXMode")
 
 # Configuration keys
-CONF_ARTNET_ID = "artnet_id"
 CONF_NAME_SHORT = "name_short"
 CONF_NAME_LONG = "name_long"
 CONF_NET = "net"

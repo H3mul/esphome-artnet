@@ -101,6 +101,31 @@ public:
                  Direction direction, bool enabled) {
     routes_.push_back({dmx_component, universe, direction, enabled});
   }
+
+  // Enable or disable a route by index
+  bool set_route_enabled_by_index(size_t index, bool enabled) {
+    if (index < routes_.size()) {
+      routes_[index].enabled = enabled;
+      return true;
+    }
+    return false;
+  }
+
+  bool set_route_universe_by_index(size_t index, uint16_t universe) {
+    if (index < routes_.size()) {
+      routes_[index].universe = universe;
+      return true;
+    }
+    return false;
+  }
+
+  bool set_route_direction_by_index(size_t index, Direction direction) {
+    if (index < routes_.size()) {
+      routes_[index].direction = direction;
+      return true;
+    }
+    return false;
+  }
 #endif
 
   static void register_sensor(ArtNetSensor *sensor);
